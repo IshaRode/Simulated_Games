@@ -6,9 +6,10 @@ const startButton = document.getElementById('startButton');
 
 let score = 0;
 let timeLeft = 30;
-let gameInterval;
-let moleInterval;
 let isPlaying = false;
+let moleTimeouts = [];
+let gameInterval;
+let difficultyFactor = 1000;
 
 function randomHole() {
     const index = Math.floor(Math.random() * holes.length);
@@ -17,55 +18,82 @@ function randomHole() {
 
 function showMole() {
     const mole = randomHole();
+    const isBonus = Math.random() < 0.1;
+
     mole.classList.add('active');
-    
-    setTimeout(() => {
-        mole.classList.remove('active');
+    if (isBonus) {
+        mole.classList.add('bonus');
+    }
+
+    const duration = Math.random() * 800 + 300 - (score * 5); 
+    const timeout = setTimeout(() => {
+        mole.classList.remove('active', 'bonus');
         if (isPlaying) showMole();
-    }, Math.random() * 1000 + 500);
+    }, duration);
+
+    moleTimeouts.push(timeout);
 }
+
 
 function bonk(e) {
     if (!e.target.classList.contains('active')) return;
-    
-    score++;
+
+    if (e.target.classList.contains('bonus')) {
+        score += 5;
+    } else {
+        score++;
+    }
+
     scoreDisplay.textContent = score;
-    
-    e.target.classList.remove('active');
+    e.target.classList.remove('active', 'bonus');
     e.target.parentNode.classList.add('bonk');
-    
+
     setTimeout(() => {
         e.target.parentNode.classList.remove('bonk');
     }, 500);
+
+    
+    if (score % 10 === 0) {
+        difficultyFactor = Math.max(difficultyFactor - 100, 400); 
+    }
 }
 
+// Start the game
 function startGame() {
     if (isPlaying) return;
-    
+
     isPlaying = true;
     score = 0;
     timeLeft = 30;
+    difficultyFactor = 1000;
     scoreDisplay.textContent = score;
     timeDisplay.textContent = timeLeft;
     startButton.disabled = true;
 
     showMole();
 
+    // Countdown timer
     gameInterval = setInterval(() => {
         timeLeft--;
         timeDisplay.textContent = timeLeft;
 
         if (timeLeft <= 0) {
-            clearInterval(gameInterval);
-            isPlaying = false;
-            startButton.disabled = false;
-            
-            // Hide any remaining active moles
-            moles.forEach(mole => mole.classList.remove('active'));
-            
-            alert(`Game Over! Your score: ${score}`);
+            endGame();
         }
     }, 1000);
+}
+
+// End the game
+function endGame() {
+    clearInterval(gameInterval);
+    moleTimeouts.forEach(timeout => clearTimeout(timeout));
+    moleTimeouts = [];
+    moles.forEach(mole => mole.classList.remove('active', 'bonus'));
+
+    isPlaying = false;
+    startButton.disabled = false;
+
+    alert(`Game Over! Your score: ${score}`);
 }
 
 moles.forEach(mole => mole.addEventListener('click', bonk));
