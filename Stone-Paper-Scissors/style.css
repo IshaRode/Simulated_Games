@@ -1,5 +1,5 @@
 body {
-    font-family:Verdana, Geneva, Tahoma, sans-serif;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     text-align: center;
     background-color: #f4f4f4;
     margin: 0;
@@ -33,17 +33,21 @@ h1 {
 
 .choice {
     padding: 10px 20px;
-    font-size: 16px;
     cursor: pointer;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    transition: background-color 0.3s;
+    background: none;
 }
 
-.choice:hover {
-    background-color: #0056b3;
+.choice img {
+    width: 50px;
+    height: 50px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.choice img.active {
+    transform: scale(1.2);
+    border: 2px solid #007bff;
+    border-radius: 50%;
 }
 
 #result {
@@ -65,4 +69,30 @@ h1 {
 
 #reset-btn:hover {
     background-color: #218838;
+}
+
+.hidden {
+    display: none;
+}
+
+#leaderboard {
+    margin-bottom: 20px;
+}
+
+#game-over {
+    color: red;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#score-limit {
+    padding: 5px;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+#high-score-container {
+    margin: 20px 0;
+    font-size: 18px;
+    font-weight: bold;
 }

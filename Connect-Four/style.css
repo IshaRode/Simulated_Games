@@ -187,6 +187,49 @@ h1 {
     animation: messageAppear 0.3s ease forwards;
 }
 
+.game-mode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    color: var(--neon-blue);
+    letter-spacing: 1px;
+}
+
+#game-mode-select {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    background: rgba(26, 26, 58, 0.9);
+    color: var(--neon-blue);
+    border: 1px solid var(--neon-blue);
+    border-radius: 0.5rem;
+    outline: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 5px rgba(0, 243, 255, 0.2);
+}
+
+#game-mode-select:hover {
+    background: rgba(26, 26, 58, 0.8);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.5), inset 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+#game-mode-select:focus {
+    background: rgba(26, 26, 58, 0.95);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.7), inset 0 0 15px rgba(0, 243, 255, 0.5);
+}
+
+.game-mode label {
+    color: var(--neon-blue);
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+
 @keyframes messageAppear {
     from {
         opacity: 0;

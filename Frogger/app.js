@@ -195,6 +195,8 @@ function lose(message) {
     resetGame();
 }
 
+
+
 // Timer Management
 function countdown() {
     timeLeft--;

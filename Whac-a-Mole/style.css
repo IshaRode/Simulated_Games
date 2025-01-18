@@ -101,6 +101,12 @@ button:disabled {
     animation: bonk 0.5s ease-out;
 }
 
+.mole.bonus {
+    background-image: url('assets/bonus-mole.png');
+    border: 3px solid gold;
+}
+
+
 @keyframes bonk {
     0% {
         opacity: 1;

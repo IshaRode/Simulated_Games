@@ -5,26 +5,25 @@ const images = [
   "Assets/ice-cream.png",
   "Assets/milkshake.png",
   "Assets/pizza.png",
-  
 ];
 
-const blankImage = "Assets/blank.png";
+const blankImage = "Assets/blankk.avif";
 const whiteImage = "Assets/whitee.png";
 
 const cardGrid = document.getElementById("card-grid");
 const startGameButton = document.getElementById("start-game");
 const winMessage = document.getElementById("win-message");
-const scoreElement = document.createElement("p"); // Create a score element
-scoreElement.textContent = "Score: 0";
-scoreElement.id = "score";
-document.querySelector(".game-container").insertBefore(scoreElement, cardGrid);
+const scoreElement = document.getElementById("score");
+const timerElement = document.getElementById("timer");
+const timerPopup = document.getElementById("timer-popup");
 
 let cards = [];
 let flippedCards = [];
 let matchedPairs = 0;
 let score = 0;
+let timer = 60;
+let timerInterval;
 
-// Initialize the game
 function shuffleCards() {
   const doubledImages = [...images, ...images];
   return doubledImages
@@ -36,7 +35,6 @@ function shuffleCards() {
     }));
 }
 
-// Render the cards
 function renderCards(cards) {
   cardGrid.innerHTML = "";
   cards.forEach((card) => {
@@ -56,13 +54,8 @@ function renderCards(cards) {
   });
 }
 
-// Handle card click
 function handleCardClick(card, cardElement) {
-  if (
-    flippedCards.length === 2 ||
-    card.matched ||
-    flippedCards.includes(card)
-  ) {
+  if (flippedCards.length === 2 || card.matched || flippedCards.includes(card)) {
     return;
   }
 
@@ -74,7 +67,6 @@ function handleCardClick(card, cardElement) {
   }
 }
 
-// Check for matches
 function checkForMatch() {
   const [card1, card2] = flippedCards;
 
@@ -88,7 +80,7 @@ function checkForMatch() {
     document.querySelectorAll(".flipped").forEach((cardElement) => {
       cardElement.classList.add("matched");
       cardElement.classList.remove("flipped");
-      cardElement.querySelector(".front img").src = whiteImage; // Change to white.png
+      cardElement.querySelector(".front img").src = whiteImage;
     });
   } else {
     document.querySelectorAll(".flipped").forEach((cardElement) => {
@@ -98,18 +90,17 @@ function checkForMatch() {
 
   flippedCards = [];
 
-  // Check win condition
   if (matchedPairs === images.length) {
     winMessage.classList.remove("hidden");
+    clearInterval(timerInterval);
+    startGameButton.disabled = false;
   }
 }
 
-// Update score
 function updateScore() {
   scoreElement.textContent = `Score: ${score}`;
 }
 
-// Start game
 function startGame() {
   winMessage.classList.add("hidden");
   matchedPairs = 0;
@@ -117,6 +108,40 @@ function startGame() {
   updateScore();
   cards = shuffleCards();
   renderCards(cards);
+
+  timer = 60;
+  timerElement.textContent = `Time Left: ${timer}s`;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 1000);
+
+  startGameButton.disabled = true;
+}
+
+function updateTimer() {
+  timer--;
+  timerElement.textContent = `Time Left: ${timer}s`;
+
+  if (timer === 0) {
+    clearInterval(timerInterval);
+    document.querySelectorAll(".card").forEach((card) => {
+      card.style.pointerEvents = "none";
+    });
+    showTimerPopup();
+    startGameButton.disabled = false;
+  }
+}
+
+function showTimerPopup() {
+  timerPopup.classList.remove("hidden");
+  timerPopup.style.display = "block";
+}
+
+function closePopup() {
+  timerPopup.classList.add("hidden");
+  timerPopup.style.display = "none";
+  document.querySelectorAll(".card").forEach((card) => {
+    card.style.pointerEvents = "auto";
+  });
 }
 
 startGameButton.addEventListener("click", startGame);
