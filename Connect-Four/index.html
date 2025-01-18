@@ -12,11 +12,19 @@
 <body>
     <div class="game-container">
         <h1>Connect Four</h1>
+        <div class="game-mode">
+            <label for="game-mode-select">Select Game Mode:</label>
+            <select id="game-mode-select">
+                <option value="player">Player vs Player</option>
+                <option value="computer">Player vs Computer</option>
+            </select>
+        </div>
         <div class="game-info">Current Player: <span id="current-player">Player 1</span></div>
         <div class="board" id="board"></div>
         <button class="reset-button" id="reset-button">Reset Game</button>
     </div>
     <div class="winner-message" id="winner-message"></div>
+    
 
     <script src="app.js"></script>
 </body>

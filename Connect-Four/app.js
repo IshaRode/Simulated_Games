@@ -7,6 +7,8 @@ class ConnectFour {
         this.currentPlayerDisplay = document.getElementById('current-player');
         this.winnerMessage = document.getElementById('winner-message');
         this.resetButton = document.getElementById('reset-button');
+        this.gameModeSelect = document.getElementById('game-mode-select');
+        this.gameMode = 'player'; // Default mode
         this.initializeBoard();
         this.setupEventListeners();
     }
@@ -29,10 +31,14 @@ class ConnectFour {
         });
 
         this.resetButton.addEventListener('click', () => this.resetGame());
+        this.gameModeSelect.addEventListener('change', (e) => {
+            this.gameMode = e.target.value;
+            this.resetGame();
+        });
     }
 
     handleCellClick(cell) {
-        if (!this.gameActive) return;
+        if (!this.gameActive || (this.gameMode === 'computer' && this.currentPlayer === 2)) return;
 
         const column = cell.dataset.index % 7;
         const availableRow = this.getLowestEmptyRow(column);
@@ -40,6 +46,10 @@ class ConnectFour {
         if (availableRow !== -1) {
             const index = availableRow * 7 + parseInt(column);
             this.placePiece(index);
+
+            if (this.gameMode === 'computer' && this.currentPlayer === 2 && this.gameActive) {
+                setTimeout(() => this.computerMove(), 500); 
+            }
         }
     }
 
@@ -72,6 +82,22 @@ class ConnectFour {
 
         this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
         this.currentPlayerDisplay.textContent = `Player ${this.currentPlayer}`;
+    }
+
+    computerMove() {
+        const validColumns = [];
+        for (let col = 0; col < 7; col++) {
+            if (this.getLowestEmptyRow(col) !== -1) {
+                validColumns.push(col);
+            }
+        }
+
+        if (validColumns.length > 0) {
+            const randomColumn = validColumns[Math.floor(Math.random() * validColumns.length)];
+            const availableRow = this.getLowestEmptyRow(randomColumn);
+            const index = availableRow * 7 + randomColumn;
+            this.placePiece(index);
+        }
     }
 
     checkWin(lastIndex) {
