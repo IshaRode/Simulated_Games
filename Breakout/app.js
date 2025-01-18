@@ -1,174 +1,244 @@
-const gameBoard = document.querySelector('#game-board')
-const scoreDisplay = document.querySelector('#score')
-const message = document.querySelector('.message')
+class Breakout {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
 
-const boardWidth = 560
-const boardHeight = 300
+        // Set canvas size
+        this.canvas.width = 480;
+        this.canvas.height = 640;
 
-const blockWidth = 100
-const blockHeight = 20
+        // Game constants
+        this.PADDLE_HEIGHT = 10;
+        this.INITIAL_PADDLE_WIDTH = 115;
+        this.PADDLE_WIDTH = this.INITIAL_PADDLE_WIDTH;
+        this.BALL_SIZE = 8;
+        this.BLOCK_HEIGHT = 20;
+        this.BLOCK_WIDTH = 82;
+        this.BLOCK_PADDING = 10;
 
-const userStart = [230, 10]
-let currentPosition = userStart
-const user = document.querySelector('#user')
-user.style.left = currentPosition[0] + 'px'
-user.style.bottom = currentPosition[1] + 'px'
+        // Game state
+        this.score = 0;
+        this.gameOver = false;
+        this.gameWon = false;
+        this.animationId = null;
 
-const ballStart = [270, 40]
-let ballCurrentPosition = ballStart
-const ball = document.querySelector('#ball')
-const ballDiameter = 20
-let xDirection = 2
-let yDirection = 2
+        // Initialize game objects
+        this.paddle = {
+            x: this.canvas.width / 2 - this.PADDLE_WIDTH / 2,
+            y: this.canvas.height - this.PADDLE_HEIGHT - 10,
+            dx: 7,
+        };
 
-let score = 0
-let timerId
-let gameStarted = false
+        this.ball = {
+            x: this.canvas.width / 2,
+            y: this.canvas.height - this.PADDLE_HEIGHT - 20,
+            dx: 4,
+            dy: -4,
+        };
 
-class Block {
-    constructor(xAxis, yAxis) {
-        this.bottomLeft = [xAxis, yAxis]
-        this.bottomRight = [xAxis + blockWidth, yAxis]
-        this.topLeft = [xAxis, yAxis + blockHeight]
-        this.topRight = [xAxis + blockWidth, yAxis + blockHeight]
+        this.blocks = this.createBlocks();
+
+        // Controls
+        this.rightPressed = false;
+        this.leftPressed = false;
+
+        // Bind event handlers
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+        document.addEventListener('keydown', this.handleKeyDown);
+        document.addEventListener('keyup', this.handleKeyUp);
+
+        // Start button
+        this.startButton = document.getElementById('startButton');
+        this.startButton.addEventListener('click', () => this.startGame());
+
+        // Message element
+        this.messageEl = document.getElementById('message');
+        this.scoreEl = document.getElementById('score');
     }
-}
 
-const blocks = []
+    createBlocks() {
+        const blocks = [];
+        const rows = 5;
+        const blocksPerRow = Math.floor(
+            (this.canvas.width - this.BLOCK_PADDING) / (this.BLOCK_WIDTH + this.BLOCK_PADDING)
+        );
+        const colors = ['#d6c2f2', '#c3a3f0', '#a877ed', '#9857f2', '#8030f0'];
 
-function generateBlocks() {
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 5; j++) {
-            blocks.push(new Block(j * (blockWidth + 10) + 10, (i * (blockHeight + 10)) + 200))
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < blocksPerRow; j++) {
+                blocks.push({
+                    x: j * (this.BLOCK_WIDTH + this.BLOCK_PADDING) + this.BLOCK_PADDING,
+                    y: i * (this.BLOCK_HEIGHT + this.BLOCK_PADDING) + this.BLOCK_PADDING + 40,
+                    width: this.BLOCK_WIDTH,
+                    height: this.BLOCK_HEIGHT,
+                    color: colors[i],
+                });
+            }
+        }
+        return blocks;
+    }
+
+    handleKeyDown(e) {
+        if (e.key === 'Right' || e.key === 'ArrowRight') {
+            this.rightPressed = true;
+        } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+            this.leftPressed = true;
         }
     }
-}
 
-generateBlocks()
-
-function addBlocks() {
-    for (let i = 0; i < blocks.length; i++) {
-        const block = document.createElement('div')
-        block.classList.add('block')
-        block.style.left = blocks[i].bottomLeft[0] + 'px'
-        block.style.bottom = blocks[i].bottomLeft[1] + 'px'
-        gameBoard.appendChild(block)
+    handleKeyUp(e) {
+        if (e.key === 'Right' || e.key === 'ArrowRight') {
+            this.rightPressed = false;
+        } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+            this.leftPressed = false;
+        }
     }
-}
 
-addBlocks()
-
-function moveUser(e) {
-    switch(e.key) {
-        case 'ArrowLeft':
-            if (currentPosition[0] > 0) {
-                currentPosition[0] -= 20
-                user.style.left = currentPosition[0] + 'px'
-            }
-            break
-        case 'ArrowRight':
-            if (currentPosition[0] < boardWidth - blockWidth) {
-                currentPosition[0] += 20
-                user.style.left = currentPosition[0] + 'px'
-            }
-            break
-        case ' ':
-            if (!gameStarted) {
-                startGame()
-            }
-            break
+    movePaddle() {
+        if (this.rightPressed && this.paddle.x < this.canvas.width - this.PADDLE_WIDTH) {
+            this.paddle.x += this.paddle.dx;
+        } else if (this.leftPressed && this.paddle.x > 0) {
+            this.paddle.x -= this.paddle.dx;
+        }
     }
-}
 
-document.addEventListener('keydown', moveUser)
+    moveBall() {
+        this.ball.x += this.ball.dx;
+        this.ball.y += this.ball.dy;
 
-function moveBall() {
-    ballCurrentPosition[0] += xDirection
-    ballCurrentPosition[1] += yDirection
-    ball.style.left = ballCurrentPosition[0] + 'px'
-    ball.style.bottom = ballCurrentPosition[1] + 'px'
-    checkForCollisions()
-}
+        // Wall collisions
+        if (this.ball.x + this.BALL_SIZE > this.canvas.width || this.ball.x - this.BALL_SIZE < 0) {
+            this.ball.dx = -this.ball.dx;
+        }
+        if (this.ball.y - this.BALL_SIZE < 0) {
+            this.ball.dy = -this.ball.dy;
+        }
 
-function startGame() {
-    if (!gameStarted) {
-        gameStarted = true
-        timerId = setInterval(moveBall, 16)
-        message.style.display = 'none'
-    }
-}
-
-message.style.display = 'block'
-message.textContent = 'Press SPACE to start\nUse ← → to move'
-
-function checkForCollisions() {
-    
-    for (let i = 0; i < blocks.length; i++) {
+        // Paddle collision
         if (
-            (ballCurrentPosition[0] > blocks[i].bottomLeft[0] && 
-             ballCurrentPosition[0] < blocks[i].bottomRight[0]) &&
-            ((ballCurrentPosition[1] + ballDiameter) > blocks[i].bottomLeft[1] && 
-             ballCurrentPosition[1] < blocks[i].topLeft[1])
+            this.ball.y + this.BALL_SIZE > this.paddle.y &&
+            this.ball.x > this.paddle.x &&
+            this.ball.x < this.paddle.x + this.PADDLE_WIDTH
         ) {
-            const allBlocks = Array.from(document.querySelectorAll('.block'))
-            allBlocks[i].remove()
-            blocks.splice(i, 1)
-            changeDirection()
-            score++
-            scoreDisplay.textContent = 'Score: ' + score
-            
-            if (blocks.length === 0) {
-                showGameOver('You Win! 🎉')
-                clearInterval(timerId)
-                document.removeEventListener('keydown', moveUser)
+            this.ball.dy = -Math.abs(this.ball.dy);
+
+            this.ball.dx = this.ball.dx + (Math.random() - 0.5) * 2;
+        }
+
+        // Game over
+        if (this.ball.y + this.BALL_SIZE > this.canvas.height) {
+            this.gameOver = true;
+        }
+    }
+
+    checkBlockCollision() {
+        for (let i = this.blocks.length - 1; i >= 0; i--) {
+            const block = this.blocks[i];
+            if (
+                this.ball.x > block.x &&
+                this.ball.x < block.x + block.width &&
+                this.ball.y > block.y &&
+                this.ball.y < block.y + block.height
+            ) {
+                this.ball.dy = -this.ball.dy;
+                this.blocks.splice(i, 1);
+                this.score += 10;
+                this.scoreEl.textContent = this.score;
+
+                if (this.blocks.length === 0) {
+                    this.gameWon = true;
+                }
             }
         }
     }
 
-    if (
-        ballCurrentPosition[0] >= (boardWidth - ballDiameter) || 
-        ballCurrentPosition[0] <= 0 || 
-        ballCurrentPosition[1] >= (boardHeight - ballDiameter)
-    ) {
-        changeDirection()
+    adjustDifficulty() {
+        // Increase ball speed based on score
+        const speedIncrement = Math.floor(this.score / 50); 
+        const baseSpeed = 4;
+        const maxSpeed = 10;
+        const speedMultiplier = Math.min(baseSpeed + speedIncrement, maxSpeed);
+
+        const directionX = this.ball.dx / Math.abs(this.ball.dx || 1);
+        const directionY = this.ball.dy / Math.abs(this.ball.dy || 1);
+
+        this.ball.dx = speedMultiplier * directionX;
+        this.ball.dy = speedMultiplier * directionY;
+
+        
+        const minPaddleWidth = 60;
+        this.PADDLE_WIDTH = Math.max(
+            this.INITIAL_PADDLE_WIDTH - speedIncrement * 10,
+            minPaddleWidth
+        );
     }
 
-    if (
-        (ballCurrentPosition[0] > currentPosition[0] && 
-         ballCurrentPosition[0] < currentPosition[0] + blockWidth) &&
-        (ballCurrentPosition[1] > currentPosition[1] && 
-         ballCurrentPosition[1] < currentPosition[1] + blockHeight)
-    ) {
-        changeDirection()
+    draw() {
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.blocks.forEach((block) => {
+            this.ctx.fillStyle = block.color;
+            this.ctx.fillRect(block.x, block.y, block.width, block.height);
+        });
+
+       
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(this.paddle.x, this.paddle.y, this.PADDLE_WIDTH, this.PADDLE_HEIGHT);
+
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.BALL_SIZE, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fill();
+        this.ctx.closePath();
     }
-    
-    if (ballCurrentPosition[1] <= 0) {
-        showGameOver('Game Over! 😢')
-        clearInterval(timerId)
-        document.removeEventListener('keydown', moveUser)
+
+    update() {
+        if (!this.gameOver && !this.gameWon) {
+            this.movePaddle();
+            this.moveBall();
+            this.checkBlockCollision();
+            this.adjustDifficulty();
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.update());
+        } else {
+            if (this.gameOver) {
+                this.messageEl.textContent = 'Game Over! Click Start to play again';
+            } else if (this.gameWon) {
+                this.messageEl.textContent = 'Congratulations! You won!';
+            }
+            this.startButton.textContent = 'Play Again';
+            this.startButton.style.display = 'block';
+        }
+    }
+
+    reset() {
+        this.score = 0;
+        this.scoreEl.textContent = '0';
+        this.gameOver = false;
+        this.gameWon = false;
+        this.messageEl.textContent = '';
+        this.blocks = this.createBlocks();
+
+        this.paddle.x = this.canvas.width / 2 - this.PADDLE_WIDTH / 2;
+        this.PADDLE_WIDTH = this.INITIAL_PADDLE_WIDTH;
+
+        this.ball.x = this.canvas.width / 2;
+        this.ball.y = this.canvas.height - this.PADDLE_HEIGHT - 20;
+        this.ball.dx = 4;
+        this.ball.dy = -4;
+    }
+
+    startGame() {
+        this.reset();
+        this.startButton.style.display = 'none';
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        this.update();
     }
 }
 
-function changeDirection() {
-    if (xDirection === 2 && yDirection === 2) {
-        yDirection = -2
-        return
-    }
-    if (xDirection === 2 && yDirection === -2) {
-        xDirection = -2
-        return
-    }
-    if (xDirection === -2 && yDirection === -2) {
-        yDirection = 2
-        return
-    }
-    if (xDirection === -2 && yDirection === 2) {
-        xDirection = 2
-        return
-    }
-}
 
-function showGameOver(text) {
-    message.style.display = 'block'
-    message.innerHTML = text + '<br>Refresh to play again'
-}
+const game = new Breakout();
