@@ -59,7 +59,7 @@ body {
     bottom: 100%;
     transform: translateX(-50%);
     transition: bottom 0.1s;
-    background-image: url('assets/mole.jpg');
+    background-image: url('https://i.ibb.co/Kjh3tvB5/mole.jpg');
     background-size: cover;
     background-position: center;
 }
@@ -102,7 +102,7 @@ button:disabled {
 }
 
 .mole.bonus {
-    background-image: url('assets/bonus-mole.png');
+    background-image: url('https://i.ibb.co/KjfhQ4jj/bonus-mole.png');
     border: 3px solid gold;
 }
 
